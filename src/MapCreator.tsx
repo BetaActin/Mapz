@@ -105,13 +105,17 @@ const MapCreator: React.FC = () => {
 
   const handleBlockMouseEnter = (row: number, col: number) => {
     if (selecting) {
-      setSelectedBlocks(prev => {
-        const exists = prev.some(b => b.row === row && b.col === col);
-        if (!exists) {
-          return [...prev, { row, col }];
-        }
-        return prev;
-      });
+      // Only allow selecting blocks in the same column as the first selected block
+      const firstSelected = selectedBlocks[0];
+      if (firstSelected && firstSelected.col === col) {
+        setSelectedBlocks(prev => {
+          const exists = prev.some(b => b.row === row && b.col === col);
+          if (!exists) {
+            return [...prev, { row, col }];
+          }
+          return prev;
+        });
+      }
     }
   };
 
