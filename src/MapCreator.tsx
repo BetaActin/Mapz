@@ -294,7 +294,7 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {cIdx + 1}
+                {(cIdx + 1) % 5 === 1 || cIdx === 0 ? cIdx + 1 : ''}
               </div>
             ))}
           </div>
@@ -312,7 +312,7 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {plantsPerColumn - rIdx}
+                {(plantsPerColumn - rIdx) % 5 === 0 || rIdx === plantsPerColumn - 1 ? plantsPerColumn - rIdx : ''}
               </div>
               
               {grid.map((col, cIdx) => {
@@ -374,7 +374,7 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {plantsPerColumn - rIdx}
+                {(plantsPerColumn - rIdx) % 5 === 0 || rIdx === plantsPerColumn - 1 ? plantsPerColumn - rIdx : ''}
               </div>
             </div>
           ))}
@@ -393,7 +393,7 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {cIdx + 1}
+                {(cIdx + 1) % 5 === 1 || cIdx === 0 ? cIdx + 1 : ''}
               </div>
             ))}
           </div>
