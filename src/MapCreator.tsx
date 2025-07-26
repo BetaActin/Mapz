@@ -175,22 +175,32 @@ const MapCreator: React.FC = () => {
 
   // Excel export with specified columns
   const handleExportExcel = () => {
-    const rows: any[] = [];
+    // Group by plot number and column
+    const plotMap = new Map<string, { block: any, cIdx: number, rIdx: number, count: number }>();
     grid.forEach((col, cIdx) => {
       col.forEach((block, rIdx) => {
         if (block.genotype && block.plotNumber !== undefined) {
-          const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx);
-          rows.push({
-            'Plot number': block.plotNumber ?? '',
-            'Column': cIdx + 1,
-            'Genotype': block.genotype,
-            'Male donor': genotypeInfo ? genotypeInfo.MaleDonor : '',
-            'Female receptor': genotypeInfo ? genotypeInfo.FemaleReceptor : '',
-            'Number of plants per plot': 1,
-          });
+          const key = `${block.plotNumber}-${cIdx}`; // Group by plot number AND column
+          if (!plotMap.has(key)) {
+            plotMap.set(key, { block, cIdx, rIdx, count: 1 });
+          } else {
+            plotMap.get(key)!.count += 1;
+          }
         }
       });
     });
+    const rows: any[] = [];
+    for (const { block, cIdx, rIdx, count } of Array.from(plotMap.values())) {
+      const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx);
+      rows.push({
+        'Plot number': block.plotNumber ?? '',
+        'Column': cIdx + 1,
+        'Genotype': block.genotype,
+        'Male donor': genotypeInfo ? genotypeInfo.MaleDonor : '',
+        'Female receptor': genotypeInfo ? genotypeInfo.FemaleReceptor : '',
+        'Number of plants per plot': count,
+      });
+    }
     const ws = XLSXUtils.json_to_sheet(rows);
     const wb = XLSXUtils.book_new();
     XLSXUtils.book_append_sheet(wb, ws, 'Map');
