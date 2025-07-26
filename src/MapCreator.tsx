@@ -171,22 +171,32 @@ const MapCreator: React.FC = () => {
 
   // Excel export with specified columns
   const handleExportExcel = () => {
-    const rows: any[] = [];
+    // Group by plot number
+    const plotMap = new Map<string | number, { block: any, cIdx: number, rIdx: number, count: number }>();
     grid.forEach((col, cIdx) => {
       col.forEach((block, rIdx) => {
-        if (block.genotype) {
-          const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx);
-          rows.push({
-            'Plot number': block.plotNumber ?? '',
-            'Column': cIdx + 1,
-            'Genotype': block.genotype,
-            'Male donor': genotypeInfo ? genotypeInfo.MaleDonor : '',
-            'Female receptor': genotypeInfo ? genotypeInfo.FemaleReceptor : '',
-            'Number of plants per plot': 1,
-          });
+        if (block.genotype && block.plotNumber !== undefined) {
+          const key = block.plotNumber;
+          if (!plotMap.has(key)) {
+            plotMap.set(key, { block, cIdx, rIdx, count: 1 });
+          } else {
+            plotMap.get(key)!.count += 1;
+          }
         }
       });
     });
+    const rows: any[] = [];
+    for (const { block, cIdx, rIdx, count } of plotMap.values()) {
+      const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx);
+      rows.push({
+        'Plot number': block.plotNumber ?? '',
+        'Column': cIdx + 1,
+        'Genotype': block.genotype,
+        'Male donor': genotypeInfo ? genotypeInfo.MaleDonor : '',
+        'Female receptor': genotypeInfo ? genotypeInfo.FemaleReceptor : '',
+        'Number of plants per plot': count,
+      });
+    }
     const ws = XLSXUtils.json_to_sheet(rows);
     const wb = XLSXUtils.book_new();
     XLSXUtils.book_append_sheet(wb, ws, 'Map');
@@ -269,10 +279,12 @@ const MapCreator: React.FC = () => {
           {Array.from({ length: plantsPerColumn }).map((_, rIdx) => (
             <div key={rIdx} style={{ display: 'flex' }}>
               {grid.map((col, cIdx) => {
-                const block = col[rIdx];
+                // Render from bottom to top
+                const rowIdx = plantsPerColumn - 1 - rIdx;
+                const block = col[rowIdx];
                 if (!block) return <div key={cIdx} style={{ width: 30, height: 30, margin: 2 }} />;
-                const isSelected = selectedBlocks.some(b => b.row === rIdx && b.col === cIdx);
-                const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx);
+                const isSelected = selectedBlocks.some(b => b.row === rowIdx && b.col === cIdx);
+                const genotypeInfo = getBlockGenotypeInfo(rowIdx, cIdx);
                 return (
                   <div
                     key={cIdx}
@@ -294,13 +306,13 @@ const MapCreator: React.FC = () => {
                       fontSize: 12,
                       fontWeight: 'bold',
                     }}
-                    onMouseDown={e => handleBlockMouseDown(rIdx, cIdx, e)}
-                    onMouseEnter={() => handleBlockMouseEnter(rIdx, cIdx)}
-                    onMouseOver={() => setHoveredBlock({ row: rIdx, col: cIdx })}
+                    onMouseDown={e => handleBlockMouseDown(rowIdx, cIdx, e)}
+                    onMouseEnter={() => handleBlockMouseEnter(rowIdx, cIdx)}
+                    onMouseOver={() => setHoveredBlock({ row: rowIdx, col: cIdx })}
                     onMouseOut={() => setHoveredBlock(null)}
                   >
                     {block.plotNumber !== undefined ? block.plotNumber : ''}
-                    {hoveredBlock && hoveredBlock.row === rIdx && hoveredBlock.col === cIdx && genotypeInfo && (
+                    {hoveredBlock && hoveredBlock.row === rowIdx && hoveredBlock.col === cIdx && genotypeInfo && (
                       <div className="block-tooltip">
                         <div><b>Genotype:</b> {genotypeInfo.Genotype}</div>
                         <div><b>Male donor:</b> {genotypeInfo.MaleDonor}</div>
