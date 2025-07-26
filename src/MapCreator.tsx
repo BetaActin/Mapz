@@ -186,7 +186,7 @@ const MapCreator: React.FC = () => {
       });
     });
     const rows: any[] = [];
-    for (const { block, cIdx, rIdx, count } of plotMap.values()) {
+    for (const { block, cIdx, rIdx, count } of Array.from(plotMap.values())) {
       const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx);
       rows.push({
         'Plot number': block.plotNumber ?? '',
