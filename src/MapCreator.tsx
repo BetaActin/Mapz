@@ -213,13 +213,13 @@ const MapCreator: React.FC = () => {
     grid.forEach((col, cIdx) => {
       col.forEach((block, rIdx) => {
         if (block.genotype) {
-          const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx) || {};
+          const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx);
           rows.push({
             'Plot number': block.plotNumber ?? '',
             'Column': cIdx + 1,
             'Genotype': block.genotype,
-            'Male donor': genotypeInfo.MaleDonor || '',
-            'Female receptor': genotypeInfo.FemaleReceptor || '',
+            'Male donor': genotypeInfo ? genotypeInfo.MaleDonor : '',
+            'Female receptor': genotypeInfo ? genotypeInfo.FemaleReceptor : '',
             'Number of plants per plot': 1,
           });
         }
