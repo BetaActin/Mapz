@@ -87,8 +87,12 @@ const MapCreator: React.FC = () => {
 
   // Selection logic
   const handleBlockMouseDown = (row: number, col: number, e?: React.MouseEvent) => {
-    if (e && e.shiftKey) {
+    if (e && e.ctrlKey) {
       setSelectedBlocks(prev => {
+        if (prev.length > 0 && prev[0].col !== col) {
+          // If trying to select in a different column, reset selection
+          return [{ row, col }];
+        }
         const exists = prev.some(b => b.row === row && b.col === col);
         if (exists) {
           return prev.filter(b => !(b.row === row && b.col === col));
