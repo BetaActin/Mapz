@@ -131,8 +131,7 @@ const MapCreator: React.FC = () => {
   const isTouchDevice = () => {
     return (
       'ontouchstart' in window ||
-      navigator.maxTouchPoints > 0 ||
-      navigator.msMaxTouchPoints > 0
+      (navigator as any).maxTouchPoints > 0
     );
   };
 
