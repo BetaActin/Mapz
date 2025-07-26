@@ -294,7 +294,7 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {(cIdx + 1) % 5 === 0 ? cIdx + 1 : ''}
+                {cIdx + 1}
               </div>
             ))}
           </div>
@@ -312,7 +312,7 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {(plantsPerColumn - rIdx) % 5 === 0 ? plantsPerColumn - rIdx : ''}
+                {plantsPerColumn - rIdx}
               </div>
               
               {grid.map((col, cIdx) => {
@@ -362,8 +362,41 @@ const MapCreator: React.FC = () => {
                   </div>
                 );
               })}
+              
+              {/* Row numbers on the right */}
+              <div style={{ 
+                width: 30, 
+                height: 30, 
+                margin: 2, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: 10,
+                fontWeight: 'bold'
+              }}>
+                {plantsPerColumn - rIdx}
+              </div>
             </div>
           ))}
+          
+          {/* Column numbers at the bottom */}
+          <div style={{ display: 'flex', marginTop: 5 }}>
+            <div style={{ width: 30, height: 20, margin: 2 }}></div>
+            {grid.map((_, cIdx) => (
+              <div key={cIdx} style={{ 
+                width: 30, 
+                height: 20, 
+                margin: 2, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: 10,
+                fontWeight: 'bold'
+              }}>
+                {cIdx + 1}
+              </div>
+            ))}
+          </div>
         </div>
       )}
       {/* Genotype dropdown and approve button for selected blocks */}
