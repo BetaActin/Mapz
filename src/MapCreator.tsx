@@ -281,7 +281,7 @@ const MapCreator: React.FC = () => {
           style={{ display: 'inline-block', border: '1px solid #ccc', padding: 10, position: 'relative' }}
         >
           {/* Column numbers at the top */}
-          <div style={{ display: 'flex', marginBottom: 5 }}>
+          <div style={{ display: 'flex', marginBottom: 5, alignItems: 'center' }}>
             <div style={{ width: 30, height: 20, margin: 2 }}></div>
             {grid.map((_, cIdx) => (
               <div key={cIdx} style={{ 
@@ -294,7 +294,7 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {(cIdx + 1) % 5 === 1 || cIdx === 0 ? cIdx + 1 : ''}
+                {(cIdx + 1) % 5 === 0 ? cIdx + 1 : ''}
               </div>
             ))}
           </div>
@@ -312,7 +312,7 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {(plantsPerColumn - rIdx) % 5 === 0 || rIdx === plantsPerColumn - 1 ? plantsPerColumn - rIdx : ''}
+                {(plantsPerColumn - rIdx) % 5 === 0 ? plantsPerColumn - rIdx : ''}
               </div>
               
               {grid.map((col, cIdx) => {
@@ -374,13 +374,13 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {(plantsPerColumn - rIdx) % 5 === 0 || rIdx === plantsPerColumn - 1 ? plantsPerColumn - rIdx : ''}
+                {(plantsPerColumn - rIdx) % 5 === 0 ? plantsPerColumn - rIdx : ''}
               </div>
             </div>
           ))}
           
           {/* Column numbers at the bottom */}
-          <div style={{ display: 'flex', marginTop: 5 }}>
+          <div style={{ display: 'flex', marginTop: 5, alignItems: 'center' }}>
             <div style={{ width: 30, height: 20, margin: 2 }}></div>
             {grid.map((_, cIdx) => (
               <div key={cIdx} style={{ 
@@ -393,7 +393,7 @@ const MapCreator: React.FC = () => {
                 fontSize: 10,
                 fontWeight: 'bold'
               }}>
-                {(cIdx + 1) % 5 === 1 || cIdx === 0 ? cIdx + 1 : ''}
+                {(cIdx + 1) % 5 === 0 ? cIdx + 1 : ''}
               </div>
             ))}
           </div>
