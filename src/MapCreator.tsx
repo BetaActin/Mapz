@@ -280,8 +280,41 @@ const MapCreator: React.FC = () => {
           ref={gridRef}
           style={{ display: 'inline-block', border: '1px solid #ccc', padding: 10, position: 'relative' }}
         >
+          {/* Column numbers at the top */}
+          <div style={{ display: 'flex', marginBottom: 5 }}>
+            <div style={{ width: 30, height: 20, margin: 2 }}></div>
+            {grid.map((_, cIdx) => (
+              <div key={cIdx} style={{ 
+                width: 30, 
+                height: 20, 
+                margin: 2, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: 10,
+                fontWeight: 'bold'
+              }}>
+                {(cIdx + 1) % 5 === 0 ? cIdx + 1 : ''}
+              </div>
+            ))}
+          </div>
+          
           {Array.from({ length: plantsPerColumn }).map((_, rIdx) => (
             <div key={rIdx} style={{ display: 'flex' }}>
+              {/* Row numbers on the left */}
+              <div style={{ 
+                width: 30, 
+                height: 30, 
+                margin: 2, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                fontSize: 10,
+                fontWeight: 'bold'
+              }}>
+                {(plantsPerColumn - rIdx) % 5 === 0 ? plantsPerColumn - rIdx : ''}
+              </div>
+              
               {grid.map((col, cIdx) => {
                 // Render from bottom to top
                 const rowIdx = plantsPerColumn - 1 - rIdx;
