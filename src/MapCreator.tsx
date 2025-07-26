@@ -266,7 +266,7 @@ const MapCreator: React.FC = () => {
         <button onClick={handleCreateMap}>Create Map</button>
         <button style={{ marginLeft: 10 }} onClick={handleExport} disabled={!isMapCreated}>Export Map</button>
         <button style={{ marginLeft: 10 }} onClick={handleExportExcel} disabled={!isMapCreated}>Export to Excel</button>
-        <button style={{ marginLeft: 10 }} onClick={() => fileInputRef.current?.click()} disabled={!isMapCreated}>Import Map</button>
+        <button style={{ marginLeft: 10 }} onClick={() => fileInputRef.current?.click()}>Import Map</button>
         <input
           type="file"
           accept="application/json"
@@ -276,127 +276,93 @@ const MapCreator: React.FC = () => {
         />
       </div>
       {isMapCreated && (
-        <div
-          ref={gridRef}
-          style={{ display: 'inline-block', border: '1px solid #ccc', padding: 10, position: 'relative' }}
-        >
-          {/* Column numbers at the top */}
-          <div style={{ display: 'flex', marginBottom: 5, alignItems: 'center' }}>
-            <div style={{ width: 30, height: 20, margin: 2 }}></div>
-            {grid.map((_, cIdx) => (
-              <div key={cIdx} style={{
-                width: 30,
-                height: 20,
-                margin: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 10,
-                fontWeight: 'bold',
-              }}>
-                {(cIdx === 0 || (cIdx + 1) % 5 === 0) ? cIdx + 1 : ''}
-              </div>
-            ))}
-          </div>
-
-          {Array.from({ length: plantsPerColumn }).map((_, rIdx) => (
-            <div key={rIdx} style={{ display: 'flex' }}>
-              {/* Row numbers on the left */}
-              <div style={{
-                width: 30,
-                height: 30,
-                margin: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 10,
-                fontWeight: 'bold',
-              }}>
-                {(plantsPerColumn - rIdx === 1 || (plantsPerColumn - rIdx) % 5 === 0) ? plantsPerColumn - rIdx : ''}
-              </div>
-
-              {grid.map((col, cIdx) => {
-                // Render from bottom to top
-                const rowIdx = plantsPerColumn - 1 - rIdx;
-                const block = col[rowIdx];
-                if (!block) return <div key={cIdx} style={{ width: 30, height: 30, margin: 2 }} />;
-                const isSelected = selectedBlocks.some(b => b.row === rowIdx && b.col === cIdx);
-                const genotypeInfo = getBlockGenotypeInfo(rowIdx, cIdx);
+        <div ref={gridRef} style={{ display: 'inline-block', border: '1px solid #ccc', padding: 10, position: 'relative' }}>
+          <table style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+            <tbody>
+              {/* Top row: empty cell + column numbers + empty cell */}
+              <tr>
+                <td></td>
+                {grid.map((_, cIdx) => (
+                  <td key={cIdx} style={{ width: 30, height: 20, textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace', fontSize: 12 }}>
+                    {(cIdx === 0 || (cIdx + 1) % 5 === 0) ? cIdx + 1 : ''}
+                  </td>
+                ))}
+                <td></td>
+              </tr>
+              {/* Main grid rows */}
+              {Array.from({ length: plantsPerColumn }).map((_, rIdx) => {
+                const rowNum = plantsPerColumn - rIdx;
                 return (
-                  <div
-                    key={cIdx}
-                    style={{
-                      width: 30,
-                      height: 30,
-                      border: '1px solid #888',
-                      margin: 2,
-                      background: isSelected
-                        ? '#b3e5fc'
-                        : genotypeInfo?.color
-                        ? genotypeInfo.color
-                        : '#f9f9f9',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      fontSize: 12,
-                      fontWeight: 'bold',
-                    }}
-                    onMouseDown={e => handleBlockMouseDown(rowIdx, cIdx, e)}
-                    onMouseEnter={() => handleBlockMouseEnter(rowIdx, cIdx)}
-                    onMouseOver={() => setHoveredBlock({ row: rowIdx, col: cIdx })}
-                    onMouseOut={() => setHoveredBlock(null)}
-                  >
-                    {block.plotNumber !== undefined ? block.plotNumber : ''}
-                    {hoveredBlock && hoveredBlock.row === rowIdx && hoveredBlock.col === cIdx && genotypeInfo && (
-                      <div className="block-tooltip">
-                        <div style={{ marginBottom: 4 }}><b>Genotype:</b> {genotypeInfo.Genotype}</div>
-                        <div style={{ marginBottom: 4 }}><b>Male donor:</b> {genotypeInfo.MaleDonor}</div>
-                        <div style={{ marginBottom: 4 }}><b>Female receptor:</b> {genotypeInfo.FemaleReceptor}</div>
-                        {block.plotNumber !== undefined && (
-                          <div style={{ marginBottom: 0 }}><b>Plot number:</b> {block.plotNumber}</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <tr key={rIdx}>
+                    {/* Left row number */}
+                    <td style={{ width: 30, height: 30, textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace', fontSize: 12 }}>
+                      {(rowNum === 1 || rowNum % 5 === 0) ? rowNum : ''}
+                    </td>
+                    {/* Grid blocks */}
+                    {grid.map((col, cIdx) => {
+                      const rowIdx = plantsPerColumn - 1 - rIdx;
+                      const block = col[rowIdx];
+                      if (!block) return <td key={cIdx} style={{ width: 30, height: 30 }} />;
+                      const isSelected = selectedBlocks.some(b => b.row === rowIdx && b.col === cIdx);
+                      const genotypeInfo = getBlockGenotypeInfo(rowIdx, cIdx);
+                      return (
+                        <td
+                          key={cIdx}
+                          style={{
+                            width: 30,
+                            height: 30,
+                            border: '1px solid #888',
+                            background: isSelected
+                              ? '#b3e5fc'
+                              : genotypeInfo?.color
+                              ? genotypeInfo.color
+                              : '#f9f9f9',
+                            cursor: 'pointer',
+                            position: 'relative',
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            verticalAlign: 'middle',
+                            padding: 0,
+                          }}
+                          onMouseDown={e => handleBlockMouseDown(rowIdx, cIdx, e)}
+                          onMouseEnter={() => handleBlockMouseEnter(rowIdx, cIdx)}
+                          onMouseOver={() => setHoveredBlock({ row: rowIdx, col: cIdx })}
+                          onMouseOut={() => setHoveredBlock(null)}
+                        >
+                          {block.plotNumber !== undefined ? block.plotNumber : ''}
+                          {hoveredBlock && hoveredBlock.row === rowIdx && hoveredBlock.col === cIdx && genotypeInfo && (
+                            <div className="block-tooltip">
+                              <div style={{ marginBottom: 4 }}><b>Genotype:</b> {genotypeInfo.Genotype}</div>
+                              <div style={{ marginBottom: 4 }}><b>Male donor:</b> {genotypeInfo.MaleDonor}</div>
+                              <div style={{ marginBottom: 4 }}><b>Female receptor:</b> {genotypeInfo.FemaleReceptor}</div>
+                              {block.plotNumber !== undefined && (
+                                <div style={{ marginBottom: 0 }}><b>Plot number:</b> {block.plotNumber}</div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                    {/* Right row number */}
+                    <td style={{ width: 30, height: 30, textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace', fontSize: 12 }}>
+                      {(rowNum === 1 || rowNum % 5 === 0) ? rowNum : ''}
+                    </td>
+                  </tr>
                 );
               })}
-
-              {/* Row numbers on the right */}
-              <div style={{
-                width: 30,
-                height: 30,
-                margin: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 10,
-                fontWeight: 'bold',
-              }}>
-                {(plantsPerColumn - rIdx === 1 || (plantsPerColumn - rIdx) % 5 === 0) ? plantsPerColumn - rIdx : ''}
-              </div>
-            </div>
-          ))}
-
-          {/* Column numbers at the bottom */}
-          <div style={{ display: 'flex', marginTop: 5, alignItems: 'center' }}>
-            <div style={{ width: 30, height: 20, margin: 2 }}></div>
-            {grid.map((_, cIdx) => (
-              <div key={cIdx} style={{
-                width: 30,
-                height: 20,
-                margin: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 10,
-                fontWeight: 'bold',
-              }}>
-                {(cIdx === 0 || (cIdx + 1) % 5 === 0) ? cIdx + 1 : ''}
-              </div>
-            ))}
-          </div>
+              {/* Bottom row: empty cell + column numbers + empty cell */}
+              <tr>
+                <td></td>
+                {grid.map((_, cIdx) => (
+                  <td key={cIdx} style={{ width: 30, height: 20, textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace', fontSize: 12 }}>
+                    {(cIdx === 0 || (cIdx + 1) % 5 === 0) ? cIdx + 1 : ''}
+                  </td>
+                ))}
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
       {/* Genotype dropdown and approve button for selected blocks */}

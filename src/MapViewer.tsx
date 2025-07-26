@@ -60,10 +60,13 @@ const MapViewer: React.FC = () => {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target?.result as string);
-        if (data.rows && data.plantsPerRow && data.grid) {
-          setRows(data.rows);
-          setPlantsPerRow(data.plantsPerRow);
-          setGrid(data.grid);
+        // Accept both old and new keys for compatibility
+        const columns = data.columns || data.rows || 0;
+        const plantsPerColumn = data.plantsPerColumn || data.plantsPerRow || 0;
+        if (columns && plantsPerColumn && data.grid) {
+          setRows(columns);
+          setPlantsPerRow(plantsPerColumn);
+          setGrid(data.grid); // grid is now column-major
         }
       } catch (err) {
         alert('Invalid file format.');
@@ -72,9 +75,10 @@ const MapViewer: React.FC = () => {
     reader.readAsText(file);
   };
 
+  // Use column-major getBlockGenotypeInfo
   const getBlockGenotypeInfo = (row: number, col: number) => {
-    if (!grid[row] || !grid[row][col]) return undefined;
-    const genotype = grid[row][col].genotype;
+    if (!grid[col] || !grid[col][row]) return undefined;
+    const genotype = grid[col][row].genotype;
     if (!genotype) return undefined;
     return genotypes.find(g => String(g.Genotype) === String(genotype));
   };
@@ -94,45 +98,84 @@ const MapViewer: React.FC = () => {
       </div>
       {grid.length > 0 && (
         <div style={{ display: 'inline-block', border: '1px solid #ccc', padding: 10, position: 'relative' }}>
-          {grid.map((row, rIdx) => (
-            <div key={rIdx} style={{ display: 'flex' }}>
-              {row.map((block, cIdx) => {
-                const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx);
+          <table style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+            <tbody>
+              {/* Top row: empty cell + column numbers + empty cell */}
+              <tr>
+                <td></td>
+                {grid.map((_, cIdx) => (
+                  <td key={cIdx} style={{ width: 30, height: 20, textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace', fontSize: 12 }}>
+                    {(cIdx === 0 || (cIdx + 1) % 5 === 0) ? cIdx + 1 : ''}
+                  </td>
+                ))}
+                <td></td>
+              </tr>
+              {/* Main grid rows */}
+              {Array.from({ length: plantsPerRow }).map((_, rIdx) => {
+                const rowNum = plantsPerRow - rIdx;
                 return (
-                  <div
-                    key={cIdx}
-                    style={{
-                      width: 30,
-                      height: 30,
-                      border: '1px solid #888',
-                      margin: 2,
-                      background: genotypeInfo?.color ? genotypeInfo.color : '#f9f9f9',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
-                      fontSize: 12,
-                      fontWeight: 'bold',
-                    }}
-                    onMouseOver={() => setHoveredBlock({ row: rIdx, col: cIdx })}
-                    onMouseOut={() => setHoveredBlock(null)}
-                  >
-                    {block.plotNumber !== undefined ? block.plotNumber : ''}
-                    {hoveredBlock && hoveredBlock.row === rIdx && hoveredBlock.col === cIdx && genotypeInfo && (
-                      <div className="block-tooltip">
-                        <div><b>Genotype:</b> {genotypeInfo.Genotype}</div>
-                        <div><b>Male donor:</b> {genotypeInfo.MaleDonor}</div>
-                        <div><b>Female receptor:</b> {genotypeInfo.FemaleReceptor}</div>
-                        {block.plotNumber !== undefined && (
-                          <div><b>Plot number:</b> {block.plotNumber}</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  <tr key={rIdx}>
+                    {/* Left row number */}
+                    <td style={{ width: 30, height: 30, textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace', fontSize: 12 }}>
+                      {(rowNum === 1 || rowNum % 5 === 0) ? rowNum : ''}
+                    </td>
+                    {/* Grid blocks */}
+                    {grid.map((col, cIdx) => {
+                      const rowIdx = plantsPerRow - 1 - rIdx;
+                      const block = col[rowIdx];
+                      const genotypeInfo = getBlockGenotypeInfo(rowIdx, cIdx);
+                      return (
+                        <td
+                          key={cIdx}
+                          style={{
+                            width: 30,
+                            height: 30,
+                            border: '1px solid #888',
+                            background: genotypeInfo?.color ? genotypeInfo.color : '#f9f9f9',
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            textAlign: 'center',
+                            verticalAlign: 'middle',
+                            padding: 0,
+                            position: 'relative',
+                            cursor: 'default',
+                          }}
+                          onMouseOver={() => setHoveredBlock({ row: rowIdx, col: cIdx })}
+                          onMouseOut={() => setHoveredBlock(null)}
+                        >
+                          {block && block.plotNumber !== undefined ? block.plotNumber : ''}
+                          {block && hoveredBlock && hoveredBlock.row === rowIdx && hoveredBlock.col === cIdx && genotypeInfo && (
+                            <div className="block-tooltip">
+                              <div style={{ marginBottom: 4 }}><b>Genotype:</b> {genotypeInfo.Genotype}</div>
+                              <div style={{ marginBottom: 4 }}><b>Male donor:</b> {genotypeInfo.MaleDonor}</div>
+                              <div style={{ marginBottom: 4 }}><b>Female receptor:</b> {genotypeInfo.FemaleReceptor}</div>
+                              {block.plotNumber !== undefined && (
+                                <div style={{ marginBottom: 0 }}><b>Plot number:</b> {block.plotNumber}</div>
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                    {/* Right row number */}
+                    <td style={{ width: 30, height: 30, textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace', fontSize: 12 }}>
+                      {(rowNum === 1 || rowNum % 5 === 0) ? rowNum : ''}
+                    </td>
+                  </tr>
                 );
               })}
-            </div>
-          ))}
+              {/* Bottom row: empty cell + column numbers + empty cell */}
+              <tr>
+                <td></td>
+                {grid.map((_, cIdx) => (
+                  <td key={cIdx} style={{ width: 30, height: 20, textAlign: 'center', fontWeight: 'bold', fontFamily: 'monospace', fontSize: 12 }}>
+                    {(cIdx === 0 || (cIdx + 1) % 5 === 0) ? cIdx + 1 : ''}
+                  </td>
+                ))}
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       )}
     </div>
