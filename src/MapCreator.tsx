@@ -88,7 +88,6 @@ const MapCreator: React.FC = () => {
   // Selection logic
   const handleBlockMouseDown = (row: number, col: number, e?: React.MouseEvent) => {
     if (e && e.shiftKey) {
-      // Toggle selection
       setSelectedBlocks(prev => {
         const exists = prev.some(b => b.row === row && b.col === col);
         if (exists) {
@@ -127,43 +126,6 @@ const MapCreator: React.FC = () => {
     }
   }, [selecting]);
 
-  // Mobile/touch selection logic
-  const isTouchDevice = () => {
-    return (
-      'ontouchstart' in window ||
-      (navigator as any).maxTouchPoints > 0
-    );
-  };
-
-  const handleBlockClick = (row: number, col: number, e?: React.MouseEvent | React.TouchEvent) => {
-    if (isTouchDevice()) {
-      setSelectedBlocks(prev => {
-        const exists = prev.some(b => b.row === row && b.col === col);
-        if (exists) {
-          return prev.filter(b => !(b.row === row && b.col === col));
-        } else {
-          return [...prev, { row, col }];
-        }
-      });
-    } else {
-      // Desktop: same as before
-      if (e && 'shiftKey' in e && e.shiftKey) {
-        setSelectedBlocks(prev => {
-          const exists = prev.some(b => b.row === row && b.col === col);
-          if (exists) {
-            return prev.filter(b => !(b.row === row && b.col === col));
-          } else {
-            return [...prev, { row, col }];
-          }
-        });
-        setSelecting(false);
-      } else {
-        setSelecting(true);
-        setSelectedBlocks([{ row, col }]);
-      }
-    }
-  };
-
   // Assign genotype and plot number to selected blocks
   const handleApprove = () => {
     if (!genotypeToAssign) return;
@@ -185,8 +147,8 @@ const MapCreator: React.FC = () => {
 
   // Tooltip logic
   const getBlockGenotypeInfo = (row: number, col: number) => {
-    if (!grid[row] || !grid[row][col]) return undefined;
-    const genotype = grid[row][col].genotype;
+    if (!grid[col] || !grid[col][row]) return undefined;
+    const genotype = grid[col][row].genotype;
     if (!genotype) return undefined;
     return genotypes.find(g => String(g.Genotype) === String(genotype));
   };
@@ -332,8 +294,7 @@ const MapCreator: React.FC = () => {
                       fontSize: 12,
                       fontWeight: 'bold',
                     }}
-                    onClick={e => handleBlockClick(rIdx, cIdx, e)}
-                    onTouchEnd={e => handleBlockClick(rIdx, cIdx, e)}
+                    onMouseDown={e => handleBlockMouseDown(rIdx, cIdx, e)}
                     onMouseEnter={() => handleBlockMouseEnter(rIdx, cIdx)}
                     onMouseOver={() => setHoveredBlock({ row: rIdx, col: cIdx })}
                     onMouseOut={() => setHoveredBlock(null)}
