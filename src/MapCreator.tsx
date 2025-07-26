@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import { utils as XLSXUtils, writeFile as XLSXWriteFile } from 'xlsx';
 import './App.css';
 
 interface GenotypeInfo {
@@ -16,14 +17,15 @@ interface Block {
   plotNumber?: number;
 }
 
-const COLOR_PALETTE = [
-  '#c8e6c9', '#b3e5fc', '#ffe082', '#ffab91', '#d1c4e9', '#f8bbd0', '#b2dfdb', '#f0f4c3', '#ffccbc', '#d7ccc8',
-  '#f5e1a4', '#aed581', '#81d4fa', '#ffd54f', '#ff8a65', '#9575cd', '#f06292', '#4dd0e1', '#dce775', '#ffb74d',
+const DISTINCT_COLORS = [
+  '#e6194b', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#46f0f0', '#f032e6', '#bcf60c', '#fabebe',
+  '#008080', '#e6beff', '#9a6324', '#fffac8', '#800000', '#aaffc3', '#808000', '#ffd8b1', '#000075', '#808080',
+  '#ffffff', '#000000', '#ff7f00', '#1f78b4', '#b15928', '#6a3d9a', '#b2df8a', '#fb9a99', '#cab2d6', '#ffff99',
 ];
 
 const MapCreator: React.FC = () => {
-  const [rows, setRows] = useState<number>(5);
-  const [plantsPerRow, setPlantsPerRow] = useState<number>(5);
+  const [columns, setColumns] = useState<number>(5);
+  const [plantsPerColumn, setPlantsPerColumn] = useState<number>(5);
   const [grid, setGrid] = useState<Block[][]>([]);
   const [isMapCreated, setIsMapCreated] = useState(false);
   const [genotypes, setGenotypes] = useState<GenotypeInfo[]>([]);
@@ -50,7 +52,7 @@ const MapCreator: React.FC = () => {
           Genotype: String(row['Genotype']),
           MaleDonor: row['Male donor'] || '',
           FemaleReceptor: row['Female receptor'] || '',
-          color: COLOR_PALETTE[idx % COLOR_PALETTE.length],
+          color: DISTINCT_COLORS[idx % DISTINCT_COLORS.length],
         })).filter(g => g.Genotype);
         setGenotypes(genotypeList);
       } catch (err) {
@@ -60,18 +62,23 @@ const MapCreator: React.FC = () => {
     fetchExcel();
   }, []);
 
+  // Use a more distinct color palette
+  useEffect(() => {
+    setGenotypes(prev => prev.map((g, idx) => ({ ...g, color: DISTINCT_COLORS[idx % DISTINCT_COLORS.length] })));
+  }, [genotypes.length]);
+
   useEffect(() => {
     setCurrentPlotNumber(startingPlotNumber);
   }, [startingPlotNumber, isMapCreated]);
 
   const handleCreateMap = () => {
     const newGrid: Block[][] = [];
-    for (let r = 0; r < rows; r++) {
-      const row: Block[] = [];
-      for (let c = 0; c < plantsPerRow; c++) {
-        row.push({ row: r, col: c });
+    for (let c = 0; c < columns; c++) {
+      const col: Block[] = [];
+      for (let r = 0; r < plantsPerColumn; r++) {
+        col.push({ row: r, col: c });
       }
-      newGrid.push(row);
+      newGrid.push(col);
     }
     setGrid(newGrid);
     setIsMapCreated(true);
@@ -120,12 +127,50 @@ const MapCreator: React.FC = () => {
     }
   }, [selecting]);
 
+  // Mobile/touch selection logic
+  const isTouchDevice = () => {
+    return (
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0 ||
+      navigator.msMaxTouchPoints > 0
+    );
+  };
+
+  const handleBlockClick = (row: number, col: number, e?: React.MouseEvent | React.TouchEvent) => {
+    if (isTouchDevice()) {
+      setSelectedBlocks(prev => {
+        const exists = prev.some(b => b.row === row && b.col === col);
+        if (exists) {
+          return prev.filter(b => !(b.row === row && b.col === col));
+        } else {
+          return [...prev, { row, col }];
+        }
+      });
+    } else {
+      // Desktop: same as before
+      if (e && 'shiftKey' in e && e.shiftKey) {
+        setSelectedBlocks(prev => {
+          const exists = prev.some(b => b.row === row && b.col === col);
+          if (exists) {
+            return prev.filter(b => !(b.row === row && b.col === col));
+          } else {
+            return [...prev, { row, col }];
+          }
+        });
+        setSelecting(false);
+      } else {
+        setSelecting(true);
+        setSelectedBlocks([{ row, col }]);
+      }
+    }
+  };
+
   // Assign genotype and plot number to selected blocks
   const handleApprove = () => {
     if (!genotypeToAssign) return;
     setGrid(prevGrid =>
-      prevGrid.map((rowArr, rIdx) =>
-        rowArr.map((block, cIdx) => {
+      prevGrid.map((colArr, cIdx) =>
+        colArr.map((block, rIdx) => {
           const isSelected = selectedBlocks.some(b => b.row === rIdx && b.col === cIdx);
           if (isSelected) {
             return { ...block, genotype: genotypeToAssign, plotNumber: currentPlotNumber };
@@ -150,8 +195,8 @@ const MapCreator: React.FC = () => {
   // Export map as JSON
   const handleExport = () => {
     const exportData = {
-      rows,
-      plantsPerRow,
+      columns,
+      plantsPerColumn,
       grid,
     };
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -163,6 +208,30 @@ const MapCreator: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  // Excel export with specified columns
+  const handleExportExcel = () => {
+    const rows: any[] = [];
+    grid.forEach((col, cIdx) => {
+      col.forEach((block, rIdx) => {
+        if (block.genotype) {
+          const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx) || {};
+          rows.push({
+            'Plot number': block.plotNumber ?? '',
+            'Column': cIdx + 1,
+            'Genotype': block.genotype,
+            'Male donor': genotypeInfo.MaleDonor || '',
+            'Female receptor': genotypeInfo.FemaleReceptor || '',
+            'Number of plants per plot': 1,
+          });
+        }
+      });
+    });
+    const ws = XLSXUtils.json_to_sheet(rows);
+    const wb = XLSXUtils.book_new();
+    XLSXUtils.book_append_sheet(wb, ws, 'Map');
+    XLSXWriteFile(wb, 'experiment_map.xlsx');
+  };
+
   // Import map from JSON
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -171,9 +240,9 @@ const MapCreator: React.FC = () => {
     reader.onload = (event) => {
       try {
         const data = JSON.parse(event.target?.result as string);
-        if (data.rows && data.plantsPerRow && data.grid) {
-          setRows(data.rows);
-          setPlantsPerRow(data.plantsPerRow);
+        if (data.columns && data.plantsPerColumn && data.grid) {
+          setColumns(data.columns);
+          setPlantsPerColumn(data.plantsPerColumn);
           setGrid(data.grid);
           setIsMapCreated(true);
           setSelectedBlocks([]);
@@ -190,22 +259,22 @@ const MapCreator: React.FC = () => {
       <h1>Experiment Map Planner</h1>
       <div style={{ marginBottom: 20 }}>
         <label>
-          Rows:
+          Columns:
           <input
             type="number"
-            value={rows}
+            value={columns}
             min={1}
-            onChange={e => setRows(Number(e.target.value))}
+            onChange={e => setColumns(Number(e.target.value))}
             style={{ margin: '0 10px' }}
           />
         </label>
         <label>
-          Plants per row:
+          Plants per column:
           <input
             type="number"
-            value={plantsPerRow}
+            value={plantsPerColumn}
             min={1}
-            onChange={e => setPlantsPerRow(Number(e.target.value))}
+            onChange={e => setPlantsPerColumn(Number(e.target.value))}
             style={{ margin: '0 10px' }}
           />
         </label>
@@ -221,6 +290,7 @@ const MapCreator: React.FC = () => {
         </label>
         <button onClick={handleCreateMap}>Create Map</button>
         <button style={{ marginLeft: 10 }} onClick={handleExport} disabled={!isMapCreated}>Export Map</button>
+        <button style={{ marginLeft: 10 }} onClick={handleExportExcel} disabled={!isMapCreated}>Export to Excel</button>
         <button style={{ marginLeft: 10 }} onClick={() => fileInputRef.current?.click()} disabled={!isMapCreated}>Import Map</button>
         <input
           type="file"
@@ -235,9 +305,11 @@ const MapCreator: React.FC = () => {
           ref={gridRef}
           style={{ display: 'inline-block', border: '1px solid #ccc', padding: 10, position: 'relative' }}
         >
-          {grid.map((row, rIdx) => (
+          {Array.from({ length: plantsPerColumn }).map((_, rIdx) => (
             <div key={rIdx} style={{ display: 'flex' }}>
-              {row.map((block, cIdx) => {
+              {grid.map((col, cIdx) => {
+                const block = col[rIdx];
+                if (!block) return <div key={cIdx} style={{ width: 30, height: 30, margin: 2 }} />;
                 const isSelected = selectedBlocks.some(b => b.row === rIdx && b.col === cIdx);
                 const genotypeInfo = getBlockGenotypeInfo(rIdx, cIdx);
                 return (
@@ -261,18 +333,15 @@ const MapCreator: React.FC = () => {
                       fontSize: 12,
                       fontWeight: 'bold',
                     }}
-                    onMouseDown={e => handleBlockMouseDown(rIdx, cIdx, e)}
+                    onClick={e => handleBlockClick(rIdx, cIdx, e)}
+                    onTouchEnd={e => handleBlockClick(rIdx, cIdx, e)}
                     onMouseEnter={() => handleBlockMouseEnter(rIdx, cIdx)}
                     onMouseOver={() => setHoveredBlock({ row: rIdx, col: cIdx })}
                     onMouseOut={() => setHoveredBlock(null)}
                   >
-                    {/* Show plot number if assigned */}
                     {block.plotNumber !== undefined ? block.plotNumber : ''}
-                    {/* Block tooltip */}
                     {hoveredBlock && hoveredBlock.row === rIdx && hoveredBlock.col === cIdx && genotypeInfo && (
-                      <div
-                        className="block-tooltip"
-                      >
+                      <div className="block-tooltip">
                         <div><b>Genotype:</b> {genotypeInfo.Genotype}</div>
                         <div><b>Male donor:</b> {genotypeInfo.MaleDonor}</div>
                         <div><b>Female receptor:</b> {genotypeInfo.FemaleReceptor}</div>
