@@ -281,12 +281,13 @@ const MapCreator: React.FC = () => {
           style={{ display: 'inline-block', border: '1px solid #ccc', padding: 10, position: 'relative' }}
         >
           {/* Column numbers at the top */}
-          <div style={{ display: 'flex', marginBottom: 5, alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 30, height: 20 }}></div>
+          <div style={{ display: 'flex', marginBottom: 5, alignItems: 'center' }}>
+            <div style={{ width: 30, height: 20, margin: 2 }}></div>
             {grid.map((_, cIdx) => (
               <div key={cIdx} style={{
                 width: 30,
                 height: 20,
+                margin: 2,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -299,11 +300,12 @@ const MapCreator: React.FC = () => {
           </div>
 
           {Array.from({ length: plantsPerColumn }).map((_, rIdx) => (
-            <div key={rIdx} style={{ display: 'flex', gap: 4 }}>
+            <div key={rIdx} style={{ display: 'flex' }}>
               {/* Row numbers on the left */}
               <div style={{
                 width: 30,
                 height: 30,
+                margin: 2,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -317,7 +319,7 @@ const MapCreator: React.FC = () => {
                 // Render from bottom to top
                 const rowIdx = plantsPerColumn - 1 - rIdx;
                 const block = col[rowIdx];
-                if (!block) return <div key={cIdx} style={{ width: 30, height: 30 }} />;
+                if (!block) return <div key={cIdx} style={{ width: 30, height: 30, margin: 2 }} />;
                 const isSelected = selectedBlocks.some(b => b.row === rowIdx && b.col === cIdx);
                 const genotypeInfo = getBlockGenotypeInfo(rowIdx, cIdx);
                 return (
@@ -327,6 +329,7 @@ const MapCreator: React.FC = () => {
                       width: 30,
                       height: 30,
                       border: '1px solid #888',
+                      margin: 2,
                       background: isSelected
                         ? '#b3e5fc'
                         : genotypeInfo?.color
@@ -364,6 +367,7 @@ const MapCreator: React.FC = () => {
               <div style={{
                 width: 30,
                 height: 30,
+                margin: 2,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -376,12 +380,13 @@ const MapCreator: React.FC = () => {
           ))}
 
           {/* Column numbers at the bottom */}
-          <div style={{ display: 'flex', marginTop: 5, alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 30, height: 20 }}></div>
+          <div style={{ display: 'flex', marginTop: 5, alignItems: 'center' }}>
+            <div style={{ width: 30, height: 20, margin: 2 }}></div>
             {grid.map((_, cIdx) => (
               <div key={cIdx} style={{
                 width: 30,
                 height: 20,
+                margin: 2,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
