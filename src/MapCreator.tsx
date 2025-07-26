@@ -351,11 +351,11 @@ const MapCreator: React.FC = () => {
                     {block.plotNumber !== undefined ? block.plotNumber : ''}
                     {hoveredBlock && hoveredBlock.row === rowIdx && hoveredBlock.col === cIdx && genotypeInfo && (
                       <div className="block-tooltip">
-                        <div><b>Genotype:</b> {genotypeInfo.Genotype}</div>
-                        <div><b>Male donor:</b> {genotypeInfo.MaleDonor}</div>
-                        <div><b>Female receptor:</b> {genotypeInfo.FemaleReceptor}</div>
+                        <div style={{ marginBottom: 4 }}><b>Genotype:</b> {genotypeInfo.Genotype}</div>
+                        <div style={{ marginBottom: 4 }}><b>Male donor:</b> {genotypeInfo.MaleDonor}</div>
+                        <div style={{ marginBottom: 4 }}><b>Female receptor:</b> {genotypeInfo.FemaleReceptor}</div>
                         {block.plotNumber !== undefined && (
-                          <div><b>Plot number:</b> {block.plotNumber}</div>
+                          <div style={{ marginBottom: 0 }}><b>Plot number:</b> {block.plotNumber}</div>
                         )}
                       </div>
                     )}
